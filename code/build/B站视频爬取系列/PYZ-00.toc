@@ -1,4 +1,4 @@
-('D:\\python_xiangxue\\兼职单\\2.B站视频爬取\\code\\build\\B站视频爬取系列\\PYZ-00.pyz',
+('F:\\TortoiseGit\\github\\BilibiliDownloadVedio\\code\\build\\B站视频爬取系列\\PYZ-00.pyz',
  [('__future__',
    'C:\\Users\\Rosyrain\\AppData\\Local\\Programs\\Python\\Python39\\lib\\__future__.py',
    'PYMODULE'),

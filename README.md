@@ -21,9 +21,7 @@
 
 **\1.  点击上述的两个程序**
 
-![img](https://rosyrain.oss-cn-hangzhou.aliyuncs.com/img2/202403311450282.jpg)
-
- 
+![image-20240331175956446](https://rosyrain.oss-cn-hangzhou.aliyuncs.com/img2/202403311759523.png)
 
 **\2.  依次进行选择（点击按钮即可进行选择）**
 
@@ -57,7 +55,9 @@
 
 
 
+5.添加cookie获取高清视频，在单个B站视频爬取的讲解视频中会说明(ps:一定要在**登录状态**下的cookie才能实现高清视频的下载)
 
+![](https://rosyrain.oss-cn-hangzhou.aliyuncs.com/img2/202403311759523.png)
 
 ## 免责声明
 

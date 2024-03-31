@@ -94,17 +94,19 @@ class Application(Frame):
         self.label02 =Label(self,text = '视频保存路径:',width=20,height=2,bg = self.bgcolor,fg = self.fgcolor,font = ('宋体',10))
         self.label03 =Label(self,text = '视频网址:',width=20,height=2,bg = self.bgcolor,fg = self.fgcolor,font = ('宋体',10))
         self.label04 =Label(self,text = '视频昵称(可自动获取):',width=20,height=2,bg = self.bgcolor,fg = self.fgcolor,font = ('宋体',10))
+        self.label05 = Label(self,text = "cookie(可以为空):",width=20,height=2,bg = self.bgcolor,fg = self.fgcolor,font = ('宋体',10))
 
         self.label01.grid(row = 0,column=0,sticky= W)
         self.label02.grid(row = 1,column=0,sticky= W)
         self.label03.grid(row = 2,column=0,sticky= W)
         self.label04.grid(row = 3,column=0,sticky= W)
+        self.label05.grid(row=4, column=0, sticky=W)
 
         #创建相应功能按钮
         self.btn01 = Button(self,text = '选择路径',command = self.find_file01)
         self.btn02 = Button(self,text = '选择路径',command = self.find_file02)
         self.btn03 = Button(self,text = '打开bilibili网站',command = self.open_web)
-        self.btn04 = Button(self,text = '点击自动获取',command = self.find_names)
+        self.btn04 = Button(self,text = '点击自动获取',command=lambda: self.find_names(str(self.video_http.get())))
         self.btn05 = Button(self,text = '开始下载',command = self.download)
         self.progressone = ttk.Progressbar(self,name = '进度条',value = 0,mode='determinate', orient=HORIZONTAL)
 
@@ -112,8 +114,8 @@ class Application(Frame):
         self.btn02.grid(row = 1,column = 7,sticky=NSEW)
         self.btn03.grid(row = 2,column = 7,sticky=NSEW)
         self.btn04.grid(row = 3,column = 7,sticky=NSEW)
-        self.btn05.grid(row = 4,column = 2,columnspan=3,sticky= NSEW)
-        self.progressone.grid(row = 5 ,column = 0,columnspan=8,sticky= NSEW )
+        self.btn05.grid(row = 5,column = 2,columnspan=3,sticky= NSEW)
+        self.progressone.grid(row = 6 ,column = 0,columnspan=8,sticky= NSEW )
 
 
         #创建单行文本框
@@ -134,10 +136,15 @@ class Application(Frame):
         self.video_names.set('可手动输入,也可以点击自动获取')
         self.entry04 = Entry(self,textvariable= self.video_names,width=40,exportselection=0,font = ('宋体',10))
 
+        self.cookie = StringVar()
+        self.cookie.set('1')
+        self.entry05 = Entry(self, textvariable=self.cookie, width=40, exportselection=0, font=('宋体', 10))
+
         self.entry01.grid(row=0,column=1,columnspan=6)
         self.entry02.grid(row=1,column=1,columnspan=6)
         self.entry03.grid(row=2,column=1,columnspan=6)
         self.entry04.grid(row=3,column=1,columnspan=6)
+        self.entry05.grid(row=4,column=1,columnspan=6)
 
     def find_file01(self):   #实现选择ffmpeg.exe路径
         filename = askopenfilename(filetypes = [('应用程序','.exe')])
@@ -154,14 +161,16 @@ class Application(Frame):
     def open_web(self):     #实现打开bilibili网页
         webbrowser.open('https://www.bilibili.com/')
 
-    def find_names(self):   #实现自动获取视频名称
-        url = self.video_http.get()
+    def find_names(self,url):   #实现自动获取视频名称
         print('获取视频昵称:'+str(url))
         if url == '请输入视频地址,点击按钮打开B站' or url == '':
             messagebox.showwarning('视频地址','您还未输入视频地址')
         else :
             name = 'none'
-            resp = requests.get(url)
+            headers = {
+                "User-Agent": random.choice(user_agent_list),
+            }
+            resp = requests.get(url,headers=headers)
             page_content = resp.text
             obj = re.compile(r'<title data-vue-meta="true">(?P<title>.*?)</title>', re.S)
             result = obj.finditer(page_content)
@@ -202,7 +211,8 @@ class Application(Frame):
         while True:
             new_url = re.sub(r"p=\d+", f"p={page_count}", new_url)
             _headers = {
-                'User-Agent': random.choice(user_agent_list)
+                'User-Agent': random.choice(user_agent_list),
+                "Cookie":str(self.cookie.get()),
             }
             print("url:", new_url)
 
@@ -251,7 +261,10 @@ class Application(Frame):
                     for data in tqdm(audio.iter_content(chunk_size=1024)):
                         f.write(data)
                 print('音频写入完成')
-                name = self.video_names.get()
+
+                self.find_names(new_url)
+                name = str(self.video_names.get())
+
                 print('开始合成最终视频')
                 # with open(self.keep_lujing.get() + f'/{name}.mp4', mode='wb') as f:
                 # 因为下文os.system写了合并后的文件,就不用提前创建了,提前创建的话,后面就需要在后台确认是否覆盖,不方便用户
@@ -268,6 +281,8 @@ class Application(Frame):
                 retry_count = 0
 
                 page_count += 1
+
+                time.sleep(random.random()*5)
 
             except:
                 print("获取Data列表失败，开始重试")
@@ -289,141 +304,10 @@ class Application(Frame):
 
 
 root = Tk()
-root.geometry('600x200+500+200')
+root.geometry('600x225+500+200')
 root.title('B站视频下载')
 
 app = Application(master=root)
 
 root.mainloop()
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# 实现爬取B站视频(非GUI版本)
-#
-# def Name(url):  # 获取视频的标题
-#     name = 'none'
-#     resp = requests.get(url)
-#     page_content = resp.text
-#     obj = re.compile(r'<title data-vue-meta="true">(?P<title>.*?)</title>', re.S)
-#     result = obj.finditer(page_content)
-#     for it in result:
-#         name = it.group('title')
-#     if name == 'none':
-#         name = input('获取视频标题失败，请手动输入:')
-#     return name
-#
-# print('需要提前配置FFmpeg相关内容（可以参考此处:https://blog.csdn.net/pythonlaodi/article/details/109222790或者https://blog.csdn.net/Chanssl/article/details/83050959）')
-# print('配置完成后，在想要保存的磁盘中创建一个文件夹')
-# print('上述两步完成后，请重新打开此程序')
-# while True:
-#     panduan = str(input('请确认上述两边是否完成(y/n): '))
-#     if panduan == 'n' or panduan == 'N':
-#         break
-#     elif panduan == 'y' or panduan == 'Y':
-#         while True:
-#             ffmpeg_ = str(input('请输入您计算机中保存ffmpeg的路径（如C:/FFmpeg/bin）到bin即可 ：'))
-#             if os.path.exists(ffmpeg_):
-#                 while True:
-#                     dizhi = str(input("请输入视频想要保存到的文件夹路径（如E:/B站视频）(不是E:/B站视频/)："))
-#                     if os.path.exists(dizhi):
-#                         while True:
-#                             url = str(input('请输入B站视频地址: '))
-#
-#                             _headers = {
-#                                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36 Edg/108.0.1462.76'
-#                             }
-#                             resp = requests.get(url,headers=_headers)
-#
-#                             page_content = resp.text
-#
-#                             #将页面源代码存入文件，方便后续的使用
-#                             # with open('B站页面源代码.html',mode='w',encoding = 'utf-8')as f:
-#                             #     f.write(page_content)
-#
-#                             obj = re.compile(r'<script>window.__playinfo__=(?P<data>.*?)</script>',re.S)
-#                             result = obj.finditer(page_content)
-#
-#                             for it in result:
-#                                 Data = it.group('data')
-#                                 #print(Data)
-#                             data_json = json.loads(Data)
-#                             videosrcurl = data_json['data']['dash']['video'][0]['baseUrl']
-#                             audiosrcurl = data_json['data']['dash']['audio'][0]['baseUrl']
-#                             # print(videosrcurl)
-#                             # print(audiosrcurl)
-#
-#                             _headers = {
-#                                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36 Edg/108.0.1462.76',
-#                                 'Referer': url
-#                             }
-#                             print('开始下载视频以及音频,请耐心等待')
-#                             video = requests.get(videosrcurl,headers=_headers,stream = True)
-#                             print('开始写入视频')
-#                             with open(dizhi+'/video.mp4',mode = 'wb')as f:
-#                                 for data in tqdm(video.iter_content(chunk_size=1024)):
-#                                     f.write(data)
-#                             print('视频写入完成')
-#                             print('休息5s')
-#                             time.sleep(5)
-#                             audio = requests.get(audiosrcurl,headers=_headers,stream = True)
-#                             print('开始写入音频')
-#                             with open(dizhi+'/audio.mp3',mode = 'wb')as f:
-#                                 for data in tqdm(audio.iter_content(chunk_size=1024)):
-#                                     f.write(data)
-#                             print('音频写入完成')
-#                             name = Name(url)
-#                             print('开始合成最终视频')
-#                             with open(dizhi+f'/{name}.mp4',mode = 'wb')as f:
-#                                 FFmpeg = ffmpeg_ + '/ffmpeg'
-#                                 os.system(f'{FFmpeg} -i {dizhi}/video.mp4 -i {dizhi}/audio.mp3 -acodec copy -vcodec copy {dizhi}/"{name}".mp4')
-#                                 print('合成成功！')
-#                             video.close()
-#                             audio.close()
-#
-#                             os.remove(dizhi+'/video.mp4')
-#                             os.remove(dizhi+'/audio.mp3')
-#                             print('视频下载完成，请到文件夹中查询')
-#
-#                             q = str(input('是否要继续下载视频y/n: '))
-#                             if q == 'y' or q == 'Y':
-#                                 continue
-#                             else:
-#                                 print('欢迎再次使用')
-#                                 break
-#                         break
-#                     else:
-#                         print('您输入的文件夹路径不存在，请重新输入')
-#                         continue
-#                 break
-#             else:
-#                 print('您输入的ffmpeg的路径不存在，请重新输入')
-#                 continue
-#         break
-#     else:
-#         print('请重新输入')
-#         continue
-#
-# print('程序将在3分钟之后自动关闭，感谢使用')
-# time.sleep(180)
